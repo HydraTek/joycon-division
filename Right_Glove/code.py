@@ -72,8 +72,9 @@ keypress_pins = [board.A6, board.A4, board.A5, board.A1]
 # Array of button variables
 key_pin_array = []
 # Set the keys to something
-keys_pressed = [Keycode.A, Keycode.B, Keycode.C, Keycode.D]
-control_key = Keycode.SHIFT
+keys_pressed = [Mouse.LEFT_BUTTON, Keycode.ESCAPE, Keycode.C, Keycode.D]
+# Is the key still pressed in 
+single_press = [0, 0, 0, 0]
 
 # Initialize the button variable array key_pin_array
 for pin in keypress_pins:
@@ -104,43 +105,50 @@ while True:
     cp.pixels.fill((0, 0, 0))
     cp.pixels.brightness = .01
 
-    
-    # connected loop 
+
+    # connected loop
     val = [1, 2, 3]
     loops = 0
     while ble.connected:
         # Blinky light to indicate that we are in a loop
         if not loops % 2000:
             cp.pixels.fill(val)
-            val = [random.randint(1, 255), 
-                   random.randint(1, 255), 
+            val = [random.randint(1, 255),
+                   random.randint(1, 255),
                    random.randint(1, 255)]
-            
+
         # Get accelerometer data NOT IN USE
         # ax, ay, az = cp.acceleration
-        
+
         # Print accelerometer data every 100th loop
         # if not loops % 100:
         #    print("X acc = {:0.3}\nY acc = {:0.3}\nZ acc = {:0.3}".format(ax, ay, az))
-        
+
         # Check if a button is pressed
         for key_pin in key_pin_array:
             if not key_pin.value:
                 i = key_pin_array.index(key_pin)
+                key = keys_pressed[i]
                 # Index finger is left click instead of a button press
-                if i == 0: 
+                if i == 0 and not single_press[i]:
                     mouse.click(Mouse.LEFT_BUTTON)
-                else:
-                    key = keys_pressed[i]
+                    single_press[i] = 1
+                elif not single_press[i]:
                     k.press(key)
                     k.release_all()
-        
+                    single_press[i] = 1
+            if key_pin.value:
+                i = key_pin_array.index(key_pin)
+                single_press[i] = 0
+        print(single_press)
+
+
         # sensitivity = 10
         # mouse movement NOT IN USE
-        # mouse.move(math.floor(-ax / 9.8 * sensitivity), 
+        # mouse.move(math.floor(-ax / 9.8 * sensitivity),
         #            math.floor(ay / 9.8 * sensitivity))
         loops += 1
-   
-    ble.stop_advertising()    
+
+    ble.stop_advertising()
     ble.start_advertising(advertisement)
     time.sleep(2)
