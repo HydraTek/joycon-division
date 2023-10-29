@@ -49,11 +49,11 @@ device_info = DeviceInfoService(
 advertisement = ProvideServicesAdvertisement(hid)
 advertisement.appearance = 961
 scan_response = Advertisement()
-scan_response.complete_name = "Right Glove"
+scan_response.complete_name = "Left Glove"
 
 # Make Bluetooth radio object
 ble = adafruit_ble.BLERadio()
-ble.name = 'Right Glove'
+ble.name = 'Left Glove'
 
 # Disconnect preconnected things so we can connect with what we want
 if ble.connected:
@@ -87,7 +87,7 @@ for pin in keypress_pins:
     key_pin_array.append(key_pin)
 
 while True:
-    # Blueloop while waiting to bluetooth connect
+    # BLE CONNECTING loop
     i = 0
     cp.pixels.fill((0, 0, 0))
     while not ble.connected:
@@ -100,43 +100,46 @@ while True:
         cp.pixels[i-5 % 10] = ((0, 0, 0))
         i += 1
         i %= 10
-    cp.pixels.fill((0, 100, 0))
-    time.sleep(1)
-    cp.pixels.fill((0, 255, 0))
-    time.sleep(1)
+    time.sleep(0.25)
+    cp.pixels.brightness = 0.1
+    for i in range(0, 220):
+        cp.pixels.fill((0, 255 - i, 0))
+        time.sleep(0.01)
     cp.pixels.fill((0, 0, 0))
+    cp.pixels.brightness = .01
     
-    # connected loop 
+    # BLE CONNECTED loop
     val = [1, 2, 3]
     loops = 0
     while ble.connected:
         # Blinky light to indicate that we are in a loop
-        if not loops % 1000:
+        if not loops % 500:
             cp.pixels.fill(val)
-            val = [random.randint(0, 255), 
-                   random.randint(0, 255), 
-                   random.randint(0, 255)]
-            
+            val = [random.randint(50, 255),
+                   random.randint(50, 255),
+                   random.randint(50, 255)]
+
         # Get accelerometer data
         ax, ay, az = cp.acceleration
-        
+
         # Print accelerometer data every 100th loop
-        if not loops % 100:
-            print("X acc = {:0.3}\nY acc = {:0.3}\nZ acc = {:0.3}".format(ax, ay, az))
-        
-        # Check if a button is pressed
+        # if not loops % 100:
+        #     print("X acc = {:0.3}\nY acc = {:0.3}\nZ acc = {:0.3}".format(ax, ay, az))
+
+        # Check if a button is pressed NOT IN USE 
+        '''
         for key_pin in key_pin_array:
             if not key_pin.value:
                 i = key_pin_array.index(key_pin)
                 key = keys_pressed[i]
                 k.press(key)
                 k.release_all()
-        
+        '''
         sensitivity = 10
         # mouse movement
-        mouse.move(math.floor(-ax / 9.8 * sensitivity), 
+        mouse.move(math.floor(-ax / 9.8 * sensitivity),
                    math.floor(ay / 9.8 * sensitivity))
         loops += 1
-        
+
     ble.start_advertising(advertisement)
     time.sleep(2)

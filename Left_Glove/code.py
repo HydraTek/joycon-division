@@ -3,7 +3,7 @@
 from adafruit_circuitplayground import cp
 import time
 import random
-import math
+# import math
 import board
 # import busio as io
 import digitalio
@@ -19,15 +19,11 @@ from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
 from adafruit_hid.keycode import Keycode
 # from hid_gamepad import Gamepad
 
-# Equivalent of Arduino's map() function.
-def range_map(x, in_min, in_max, out_min, out_max):
-    return (x - in_min) * (out_max - out_min) // (in_max - in_min) + out_min
-
 # Fancy Start up LEDs
 cp.pixels.brightness = .01
-for y in range(5):
+for y in range(2):
     for x in range(10):
-        time.sleep(0.015)
+        time.sleep(0.1)
         cp.pixels[x % 10] = (255, 0, 0)
         cp.pixels[(x + 1) % 10] = (255, 128, 0)
         cp.pixels[(x + 2) % 10] = (255, 255, 0)
@@ -100,43 +96,51 @@ while True:
         cp.pixels[i-5 % 10] = ((0, 0, 0))
         i += 1
         i %= 10
-    cp.pixels.fill((0, 100, 0))
-    time.sleep(1)
-    cp.pixels.fill((0, 255, 0))
-    time.sleep(1)
+    time.sleep(0.25)
+    cp.pixels.brightness = 0.1
+    for i in range(0, 220):
+        cp.pixels.fill((0, 255 - i, 0))
+        time.sleep(0.01)
     cp.pixels.fill((0, 0, 0))
+    cp.pixels.brightness = .01
+
     
     # connected loop 
     val = [1, 2, 3]
     loops = 0
     while ble.connected:
         # Blinky light to indicate that we are in a loop
-        if not loops % 1000:
+        if not loops % 2000:
             cp.pixels.fill(val)
-            val = [random.randint(0, 255), 
-                   random.randint(0, 255), 
-                   random.randint(0, 255)]
+            val = [random.randint(1, 255), 
+                   random.randint(1, 255), 
+                   random.randint(1, 255)]
             
-        # Get accelerometer data
-        ax, ay, az = cp.acceleration
+        # Get accelerometer data NOT IN USE
+        # ax, ay, az = cp.acceleration
         
         # Print accelerometer data every 100th loop
-        if not loops % 100:
-            print("X acc = {:0.3}\nY acc = {:0.3}\nZ acc = {:0.3}".format(ax, ay, az))
+        # if not loops % 100:
+        #    print("X acc = {:0.3}\nY acc = {:0.3}\nZ acc = {:0.3}".format(ax, ay, az))
         
         # Check if a button is pressed
         for key_pin in key_pin_array:
             if not key_pin.value:
                 i = key_pin_array.index(key_pin)
-                key = keys_pressed[i]
-                k.press(key)
-                k.release_all()
+                # Index finger is left click instead of a button press
+                if i == 0: 
+                    mouse.click(Mouse.LEFT_BUTTON)
+                else:
+                    key = keys_pressed[i]
+                    k.press(key)
+                    k.release_all()
         
-        sensitivity = 10
-        # mouse movement
-        mouse.move(math.floor(-ax / 9.8 * sensitivity), 
-                   math.floor(ay / 9.8 * sensitivity))
+        # sensitivity = 10
+        # mouse movement NOT IN USE
+        # mouse.move(math.floor(-ax / 9.8 * sensitivity), 
+        #            math.floor(ay / 9.8 * sensitivity))
         loops += 1
-        
+   
+    ble.stop_advertising()    
     ble.start_advertising(advertisement)
     time.sleep(2)
