@@ -3,7 +3,7 @@
 from adafruit_circuitplayground import cp
 import time
 import random
-# import math
+import math
 import board
 # import busio as io
 import digitalio
@@ -19,11 +19,15 @@ from adafruit_hid.keyboard_layout_us import KeyboardLayoutUS
 from adafruit_hid.keycode import Keycode
 # from hid_gamepad import Gamepad
 
+# Equivalent of Arduino's map() function.
+def range_map(x, in_min, in_max, out_min, out_max):
+    return (x - in_min) * (out_max - out_min) // (in_max - in_min) + out_min
+
 # Fancy Start up LEDs
 cp.pixels.brightness = .01
-for y in range(2):
+for y in range(5):
     for x in range(10):
-        time.sleep(0.1)
+        time.sleep(0.015)
         cp.pixels[x % 10] = (255, 0, 0)
         cp.pixels[(x + 1) % 10] = (255, 128, 0)
         cp.pixels[(x + 2) % 10] = (255, 255, 0)
@@ -45,11 +49,11 @@ device_info = DeviceInfoService(
 advertisement = ProvideServicesAdvertisement(hid)
 advertisement.appearance = 961
 scan_response = Advertisement()
-scan_response.complete_name = "Right Glove"
+scan_response.complete_name = "Left Glove"
 
 # Make Bluetooth radio object
 ble = adafruit_ble.BLERadio()
-ble.name = 'Right Glove'
+ble.name = 'Left Glove'
 
 # Disconnect preconnected things so we can connect with what we want
 if ble.connected:
@@ -83,7 +87,7 @@ for pin in keypress_pins:
     key_pin_array.append(key_pin)
 
 while True:
-    # Blueloop while waiting to bluetooth connect
+    # BLE CONNECTING loop
     i = 0
     cp.pixels.fill((0, 0, 0))
     while not ble.connected:
@@ -103,44 +107,39 @@ while True:
         time.sleep(0.01)
     cp.pixels.fill((0, 0, 0))
     cp.pixels.brightness = .01
-
     
-    # connected loop 
+    # BLE CONNECTED loop
     val = [1, 2, 3]
     loops = 0
     while ble.connected:
         # Blinky light to indicate that we are in a loop
-        if not loops % 2000:
+        if not loops % 500:
             cp.pixels.fill(val)
-            val = [random.randint(1, 255), 
-                   random.randint(1, 255), 
-                   random.randint(1, 255)]
-            
-        # Get accelerometer data NOT IN USE
-        # ax, ay, az = cp.acceleration
-        
+            val = [random.randint(50, 255),
+                   random.randint(50, 255),
+                   random.randint(50, 255)]
+
+        # Get accelerometer data
+        ax, ay, az = cp.acceleration
+
         # Print accelerometer data every 100th loop
         # if not loops % 100:
-        #    print("X acc = {:0.3}\nY acc = {:0.3}\nZ acc = {:0.3}".format(ax, ay, az))
-        
-        # Check if a button is pressed
+        #     print("X acc = {:0.3}\nY acc = {:0.3}\nZ acc = {:0.3}".format(ax, ay, az))
+
+        # Check if a button is pressed NOT IN USE 
+        '''
         for key_pin in key_pin_array:
             if not key_pin.value:
                 i = key_pin_array.index(key_pin)
-                # Index finger is left click instead of a button press
-                if i == 0: 
-                    mouse.click(Mouse.LEFT_BUTTON)
-                else:
-                    key = keys_pressed[i]
-                    k.press(key)
-                    k.release_all()
-        
-        # sensitivity = 10
-        # mouse movement NOT IN USE
-        # mouse.move(math.floor(-ax / 9.8 * sensitivity), 
-        #            math.floor(ay / 9.8 * sensitivity))
+                key = keys_pressed[i]
+                k.press(key)
+                k.release_all()
+        '''
+        sensitivity = 10
+        # mouse movement
+        mouse.move(math.floor(-ax / 9.8 * sensitivity),
+                   math.floor(ay / 9.8 * sensitivity))
         loops += 1
-   
-    ble.stop_advertising()    
+
     ble.start_advertising(advertisement)
     time.sleep(2)
